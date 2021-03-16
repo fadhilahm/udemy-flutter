@@ -11,10 +11,9 @@ class TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 450,
-      child: transactions.isEmpty
-          ? Column(
+    return transactions.isEmpty
+        ? LayoutBuilder(builder: (ctx, constraints) {
+            return Column(
               children: [
                 Text(
                   'No transactions added yet!',
@@ -24,47 +23,47 @@ class TransactionList extends StatelessWidget {
                   height: 20,
                 ),
                 Container(
-                  height: 200,
+                  height: constraints.maxHeight * 0.6,
                   child: Image.asset(
                     'assets/images/waiting.png',
                     fit: BoxFit.cover,
                   ),
                 )
               ],
-            )
-          : ListView.builder(
-              itemBuilder: (ctx, idx) => Card(
-                elevation: 5,
-                margin: EdgeInsets.symmetric(
-                  horizontal: 5,
-                  vertical: 8,
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    radius: 30,
-                    child: Padding(
-                      padding: EdgeInsets.all(6),
-                      child: FittedBox(
-                        child: Text('\$${transactions[idx].amount}'),
-                      ),
+            );
+          })
+        : ListView.builder(
+            itemBuilder: (ctx, idx) => Card(
+              elevation: 5,
+              margin: EdgeInsets.symmetric(
+                horizontal: 5,
+                vertical: 8,
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 30,
+                  child: Padding(
+                    padding: EdgeInsets.all(6),
+                    child: FittedBox(
+                      child: Text('\$${transactions[idx].amount}'),
                     ),
                   ),
-                  title: Text(
-                    '${transactions[idx].title}',
-                    style: Theme.of(context).textTheme.headline6,
-                  ),
-                  subtitle: Text(
-                    '${DateFormat.yMMMd().format(transactions[idx].date)}',
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    color: Theme.of(context).errorColor,
-                    onPressed: () => deleteTx(transactions[idx].id),
-                  ),
+                ),
+                title: Text(
+                  '${transactions[idx].title}',
+                  style: Theme.of(context).textTheme.headline6,
+                ),
+                subtitle: Text(
+                  '${DateFormat.yMMMd().format(transactions[idx].date)}',
+                ),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete),
+                  color: Theme.of(context).errorColor,
+                  onPressed: () => deleteTx(transactions[idx].id),
                 ),
               ),
-              itemCount: transactions.length,
             ),
-    );
+            itemCount: transactions.length,
+          );
   }
 }
