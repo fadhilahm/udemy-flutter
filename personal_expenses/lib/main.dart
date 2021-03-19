@@ -217,11 +217,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: Chart(_recentTransactions),
                     )
                   : txListWidget,
-            Container(
-              height: availableHeight * 0.3,
-              child: Chart(_recentTransactions),
-            ),
-            txListWidget
+            if (!isLandscape)
+              Container(
+                height: availableHeight * 0.3,
+                child: Chart(_recentTransactions),
+              ),
+            if (!isLandscape) txListWidget
           ],
         ),
       ),
