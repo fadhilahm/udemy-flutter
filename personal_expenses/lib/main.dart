@@ -58,7 +58,7 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   final List<Transaction> _transactions = [
     Transaction(
       id: 't1',
@@ -100,6 +100,23 @@ class _MyHomePageState extends State<MyHomePage> {
 
   bool _showChart = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    print(state);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
   List<Transaction> get _recentTransactions {
     return _transactions
         .where((transaction) => transaction.date
@@ -138,12 +155,34 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+  List<Widget> _buildPortraitContent(
+    double availableHeight,
+    Widget txListWidget,
+  ) {
+    return [
+      Container(
+        height: availableHeight * 0.3,
+        child: Chart(_recentTransactions),
+      ),
+      txListWidget
+    ];
+  }
 
-    final PreferredSizeWidget appBar = Platform.isIOS
+  List<Widget> _buildLandscapeContent(
+      double availableHeight, Widget switchElement, Widget txListWidget) {
+    return [
+      switchElement,
+      _showChart
+          ? Container(
+              height: availableHeight * 0.7,
+              child: Chart(_recentTransactions),
+            )
+          : txListWidget,
+    ];
+  }
+
+  PreferredSizeWidget _buildAppbar() {
+    return Platform.isIOS
         ? CupertinoNavigationBar(
             middle: Text('Personal Expenses App'),
             trailing: Row(
@@ -172,6 +211,13 @@ class _MyHomePageState extends State<MyHomePage> {
               )
             ],
           );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final appBar = _buildAppbar();
 
     final switchElement = Container(
       child: Row(
@@ -209,20 +255,11 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (isLandscape) switchElement,
             if (isLandscape)
-              _showChart
-                  ? Container(
-                      height: availableHeight * 0.7,
-                      child: Chart(_recentTransactions),
-                    )
-                  : txListWidget,
+              ..._buildLandscapeContent(
+                  availableHeight, switchElement, txListWidget),
             if (!isLandscape)
-              Container(
-                height: availableHeight * 0.3,
-                child: Chart(_recentTransactions),
-              ),
-            if (!isLandscape) txListWidget
+              ..._buildPortraitContent(availableHeight, txListWidget)
           ],
         ),
       ),
