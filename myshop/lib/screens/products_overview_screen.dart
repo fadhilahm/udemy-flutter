@@ -1,32 +1,46 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/product_item.dart';
-import '../dummy_data.dart';
-import '../models/product.dart';
+import '../widgets/products_grid.dart';
 
-class ProductsOverviewScreen extends StatelessWidget {
-  final List<Product> loadedProducts = dummyProducts;
+enum FilterOptions {
+  Favorites,
+  All,
+}
+
+class ProductsOverviewScreen extends StatefulWidget {
+  @override
+  _ProductsOverviewScreenState createState() => _ProductsOverviewScreenState();
+}
+
+class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
+  bool _areFavoritesShown = false;
+
+  void selectPopUp(FilterOptions filter) =>
+      setState(() => _areFavoritesShown = filter == FilterOptions.Favorites);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('MyShop'),
+        actions: [
+          PopupMenuButton(
+            onSelected: selectPopUp,
+            icon: const Icon(Icons.more_vert),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                child: const Text('Only Favorites'),
+                value: FilterOptions.Favorites,
+              ),
+              PopupMenuItem(
+                child: const Text('Show All'),
+                value: FilterOptions.All,
+              ),
+            ],
+          )
+        ],
       ),
-      body: GridView.builder(
-          padding: const EdgeInsets.all(10),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 3 / 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: loadedProducts.length,
-          itemBuilder: (ctx, idx) => ProductItem(
-                id: loadedProducts[idx].id,
-                title: loadedProducts[idx].title,
-                imageUrl: loadedProducts[idx].imageUrl,
-              )),
+      body: ProductsGrid(_areFavoritesShown),
     );
   }
 }
