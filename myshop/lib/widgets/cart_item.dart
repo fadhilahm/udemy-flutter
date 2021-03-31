@@ -33,6 +33,22 @@ class CartItem extends StatelessWidget {
         child: const Icon(Icons.delete),
       ),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (DismissDirection dismissDirection) => showDialog(
+          context: context,
+          builder: (BuildContext ctx) => AlertDialog(
+                title: const Text("Are you sure?"),
+                content: const Text("Do you really want to delete this item?"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text('No'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('Yes'),
+                  )
+                ],
+              )),
       onDismissed: (DismissDirection direction) =>
           Provider.of<Cart>(context, listen: false).removeItem(productId),
       child: Card(
@@ -52,7 +68,9 @@ class CartItem extends StatelessWidget {
               ),
             ),
             title: Text(title),
-            subtitle: Text('Total: \$${(price * quantity).toStringAsFixed(2)}'),
+            subtitle: Text(
+              'Total: \$${(price * quantity).toStringAsFixed(2)}',
+            ),
             trailing: Text('$quantity x'),
           ),
         ),
