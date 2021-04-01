@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../screens/orders_screen.dart';
+import '../screens/user_products_screen.dart';
 
 class MainDrawer extends StatelessWidget {
+  List<Widget> buildDrawerItem({
+    @required BuildContext context,
+    @required String title,
+    @required IconData icon,
+    @required String routeName,
+  }) {
+    return [
+      const Divider(),
+      ListTile(
+        leading: Icon(icon),
+        title: Text(title),
+        onTap: () => Navigator.of(context).pushReplacementNamed(routeName),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -13,18 +30,23 @@ class MainDrawer extends StatelessWidget {
             title: const Text('Hello Friend!'),
             automaticallyImplyLeading: false,
           ),
-          Divider(),
-          ListTile(
-            leading: const Icon(Icons.shop),
-            title: const Text('Shop'),
-            onTap: () => Navigator.of(context).pushReplacementNamed('/'),
+          ...buildDrawerItem(
+            context: context,
+            title: 'Shop',
+            icon: Icons.shop,
+            routeName: '/',
           ),
-          Divider(),
-          ListTile(
-            leading: const Icon(Icons.payment),
-            title: const Text('Orders'),
-            onTap: () => Navigator.of(context)
-                .pushReplacementNamed(OrdersScreen.routeName),
+          ...buildDrawerItem(
+            context: context,
+            title: 'Orders',
+            icon: Icons.payment,
+            routeName: OrdersScreen.routeName,
+          ),
+          ...buildDrawerItem(
+            context: context,
+            title: 'Manage Products',
+            icon: Icons.edit,
+            routeName: UserProductsScreen.routeName,
           )
         ],
       ),
