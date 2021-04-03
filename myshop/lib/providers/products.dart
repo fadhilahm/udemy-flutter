@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import './product.dart';
 import '../dummy_data.dart';
@@ -14,17 +17,66 @@ class Products with ChangeNotifier {
 
   Product findById(String id) => _items.firstWhere((item) => item.id == id);
 
-  void addProduct(ProductForm newProductForm) {
-    _items.add(
-      Product(
-        id: DateTime.now().toString(),
-        title: newProductForm.title,
-        price: newProductForm.price,
-        description: newProductForm.description,
-        imageUrl: newProductForm.imageUrl,
-      ),
+  Future<void> fetchAndSetProducts() async {
+    final url = Uri.https(
+      'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
+      '/products.json',
     );
-    notifyListeners();
+    try {
+      final response = await http.get(url);
+      final extractedData = json.decode(response.body) as Map<String, dynamic>;
+      final List<Product> loadedProducts = [];
+
+      extractedData.forEach(
+        (productId, productData) => loadedProducts.add(
+          Product(
+            id: productId,
+            title: productData['title'],
+            description: productData['description'],
+            price: productData['price'],
+            imageUrl: productData['imageUrl'],
+            isFavorite: productData['isFavorite'],
+          ),
+        ),
+      );
+
+      _items = loadedProducts;
+      notifyListeners();
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  Future<void> addProduct(ProductForm newProductForm) async {
+    try {
+      final url = Uri.https(
+        'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
+        '/products.json',
+      );
+      final response = await http.post(
+        url,
+        body: json.encode({
+          'title': newProductForm.title,
+          'price': newProductForm.price,
+          'description': newProductForm.description,
+          'imageUrl': newProductForm.imageUrl,
+          'isFavorite': newProductForm.isFavorite,
+        }),
+      );
+      _items.add(
+        Product(
+          id: json.decode(response.body)['name'],
+          title: newProductForm.title,
+          price: newProductForm.price,
+          description: newProductForm.description,
+          imageUrl: newProductForm.imageUrl,
+        ),
+      );
+      notifyListeners();
+    } catch (error) {
+      print(error);
+      throw error;
+    }
   }
 
   void editProduct(String id, ProductForm updatedProductForm) {
