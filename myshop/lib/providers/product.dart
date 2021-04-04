@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+
+import '../models/http_exception.dart';
 
 class Product with ChangeNotifier {
   final String id;
@@ -17,8 +22,22 @@ class Product with ChangeNotifier {
     this.isFavorite = false,
   });
 
-  void toggleIsFavorite() {
+  Future<void> toggleIsFavorite() async {
     isFavorite = !isFavorite;
     notifyListeners();
+
+    final url = Uri.https(
+      'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
+      '/products/$id.json',
+    );
+    await http
+        .patch(url, body: json.encode({'isFavorite': isFavorite}))
+        .then((response) {
+      if (response.statusCode >= 400) {
+        isFavorite = !isFavorite;
+        notifyListeners();
+        throw HttpException('Failed to delete isFavorite!');
+      }
+    });
   }
 }

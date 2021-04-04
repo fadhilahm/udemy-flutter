@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import './orders_screen.dart';
+
 import '../widgets/cart_item.dart';
+
 import '../providers/cart.dart';
 import '../providers/orders.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   static const routeName = '/cart';
 
   @override
+  _CartScreenState createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  var _isLoading = false;
+
+  @override
   Widget build(BuildContext context) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Cart'),
@@ -42,16 +54,40 @@ class CartScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      final cart = Provider.of<Cart>(context, listen: false);
-                      Provider.of<Orders>(context, listen: false).addOrder(
-                        cart.items.values.toList(),
-                        cart.totalPrice,
-                      );
-                      cart.clear();
-                    },
-                    child: const Text('ORDER NOW'),
+                  Consumer<Cart>(
+                    builder: (ctx, cart, child) => TextButton(
+                      onPressed: cart.items.isEmpty
+                          ? null
+                          : () async {
+                              setState(() => _isLoading = true);
+                              try {
+                                await Provider.of<Orders>(context,
+                                        listen: false)
+                                    .addOrder(
+                                  cart.items.values.toList(),
+                                  cart.totalPrice,
+                                );
+                                cart.clear();
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                    OrdersScreen.routeName, (route) => false);
+                              } catch (_) {
+                                scaffoldMessenger.showSnackBar(SnackBar(
+                                  content: const Text(
+                                    'Error adding order!',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ));
+                              } finally {
+                                setState(() => _isLoading = false);
+                              }
+                            },
+                      child: _isLoading
+                          ? CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).primaryColor),
+                            )
+                          : const Text('ORDER NOW'),
+                    ),
                   )
                 ],
               ),

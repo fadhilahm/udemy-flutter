@@ -10,6 +10,7 @@ class ProductItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final product = Provider.of<Product>(context, listen: false);
     final cart = Provider.of<Cart>(context, listen: false);
+    final scaffold = ScaffoldMessenger.of(context);
     print('rebuild ProductItem widget');
 
     return ClipRRect(
@@ -35,7 +36,18 @@ class ProductItem extends StatelessWidget {
                 product.isFavorite ? Icons.favorite : Icons.favorite_border,
               ),
             ),
-            onPressed: product.toggleIsFavorite,
+            onPressed: () async {
+              try {
+                await product.toggleIsFavorite();
+              } catch (_) {
+                scaffold.showSnackBar(SnackBar(
+                  content: const Text(
+                    'Failed to update isFavorite',
+                    textAlign: TextAlign.center,
+                  ),
+                ));
+              }
+            },
           ),
           trailing: IconButton(
             color: Theme.of(context).accentColor,

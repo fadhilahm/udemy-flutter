@@ -6,20 +6,43 @@ import '../widgets/main_drawer.dart';
 
 import '../providers/orders.dart';
 
-class OrdersScreen extends StatelessWidget {
+class OrdersScreen extends StatefulWidget {
   static const routeName = '/orders';
 
   @override
-  Widget build(BuildContext context) {
-    final orderData = Provider.of<Orders>(context);
+  _OrdersScreenState createState() => _OrdersScreenState();
+}
 
+class _OrdersScreenState extends State<OrdersScreen> {
+  var _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoading = true;
+    Provider.of<Orders>(context, listen: false)
+        .fetchAndSetOrders()
+        .whenComplete(() => setState(() => _isLoading = false));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Orders'),
       ),
-      body: ListView.builder(
-        itemCount: orderData.orders.length,
-        itemBuilder: (ctx, i) => OrderItem(orderData.orders[i]),
+      body: RefreshIndicator(
+        onRefresh:
+            Provider.of<Orders>(context, listen: false).fetchAndSetOrders,
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : Consumer<Orders>(
+                builder: (_, orders, __) => ListView.builder(
+                      itemCount: orders.orders.length,
+                      itemBuilder: (ctx, i) => OrderItem(orders.orders[i]),
+                    )),
       ),
       drawer: MainDrawer(),
     );

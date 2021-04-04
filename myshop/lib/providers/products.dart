@@ -5,7 +5,9 @@ import 'package:http/http.dart' as http;
 
 import './product.dart';
 import '../dummy_data.dart';
+
 import '../models/product_form.dart';
+import '../models/http_exception.dart';
 
 class Products with ChangeNotifier {
   List<Product> _items = dummyProducts;
@@ -79,24 +81,56 @@ class Products with ChangeNotifier {
     }
   }
 
-  void editProduct(String id, ProductForm updatedProductForm) {
+  Future<void> editProduct(String id, ProductForm updatedProductForm) async {
     final productId = items.indexWhere((product) => product.id == id);
     if (productId < 0) return;
-
-    _items[productId] = Product(
-      id: id,
-      title: updatedProductForm.title,
-      description: updatedProductForm.description,
-      price: updatedProductForm.price,
-      imageUrl: updatedProductForm.imageUrl,
-      isFavorite: _items[productId].isFavorite,
+    final url = Uri.https(
+      'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
+      '/products/$id.json',
     );
+    try {
+      await http.patch(url,
+          body: json.encode({
+            'title': updatedProductForm.title,
+            'description': updatedProductForm.description,
+            'price': updatedProductForm.price,
+            'imageUrl': updatedProductForm.imageUrl,
+          }));
 
-    notifyListeners();
+      _items[productId] = Product(
+        id: id,
+        title: updatedProductForm.title,
+        description: updatedProductForm.description,
+        price: updatedProductForm.price,
+        imageUrl: updatedProductForm.imageUrl,
+        isFavorite: _items[productId].isFavorite,
+      );
+
+      notifyListeners();
+    } catch (error) {
+      throw error;
+    }
   }
 
-  void deleteProduct(String id) {
-    _items.removeWhere((product) => product.id == id);
+  Future<void> deleteProduct(String id) async {
+    // Optimistic Update
+    final existingProductIndex =
+        items.indexWhere((product) => product.id == id);
+    var existingProduct = items[existingProductIndex];
+    _items.removeAt(existingProductIndex);
     notifyListeners();
+    final url = Uri.https(
+      'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
+      '/products/$id.json',
+    );
+    final response = await http.delete(url);
+
+    if (response.statusCode >= 400) {
+      _items.insert(existingProductIndex, existingProduct);
+      notifyListeners();
+      throw HttpException('Cannot delete product!');
+    }
+
+    existingProduct = null; // Delete the pointer because it is now unused.
   }
 }
