@@ -14,19 +14,21 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
-  var _isLoading = false;
+  Future _ordersFuture;
+
+  Future _obtainOrdersFuture() {
+    return Provider.of<Orders>(context, listen: false).fetchAndSetOrders();
+  }
 
   @override
   void initState() {
     super.initState();
-    _isLoading = true;
-    Provider.of<Orders>(context, listen: false)
-        .fetchAndSetOrders()
-        .whenComplete(() => setState(() => _isLoading = false));
+    _ordersFuture = _obtainOrdersFuture();
   }
 
   @override
   Widget build(BuildContext context) {
+    print("Building orders widget...");
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Orders'),
@@ -34,15 +36,27 @@ class _OrdersScreenState extends State<OrdersScreen> {
       body: RefreshIndicator(
         onRefresh:
             Provider.of<Orders>(context, listen: false).fetchAndSetOrders,
-        child: _isLoading
-            ? const Center(
+        child: FutureBuilder(
+          future: _ordersFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
                 child: CircularProgressIndicator(),
-              )
-            : Consumer<Orders>(
-                builder: (_, orders, __) => ListView.builder(
-                      itemCount: orders.orders.length,
-                      itemBuilder: (ctx, i) => OrderItem(orders.orders[i]),
-                    )),
+              );
+            }
+            if (snapshot.error != null) {
+              return const Center(
+                child: Text("An Error Occured..."),
+              );
+            }
+            return Consumer<Orders>(
+              builder: (_, orders, __) => ListView.builder(
+                itemCount: orders.orders.length,
+                itemBuilder: (ctx, i) => OrderItem(orders.orders[i]),
+              ),
+            );
+          },
+        ),
       ),
       drawer: MainDrawer(),
     );

@@ -20,6 +20,7 @@ class Orders with ChangeNotifier {
     try {
       final response = await http.get(url);
       final extractedData = json.decode(response.body) as Map<String, dynamic>;
+      if (extractedData == null) return;
 
       final List<OrderItem> loadedOrders = [];
       extractedData.forEach((orderId, orderData) {
@@ -42,7 +43,7 @@ class Orders with ChangeNotifier {
         ));
       });
 
-      _orders = loadedOrders;
+      _orders = loadedOrders.reversed.toList();
       notifyListeners();
     } catch (error) {
       print(error);
@@ -69,7 +70,7 @@ class Orders with ChangeNotifier {
           body: json.encode({
             'amount': total,
             'products': mappedCartProducts,
-            'dateTime': currentTime.toString(),
+            'dateTime': currentTime.toIso8601String(),
           }));
       _orders.insert(
         0,

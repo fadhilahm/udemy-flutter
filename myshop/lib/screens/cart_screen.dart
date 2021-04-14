@@ -8,15 +8,8 @@ import '../widgets/cart_item.dart';
 import '../providers/cart.dart';
 import '../providers/orders.dart';
 
-class CartScreen extends StatefulWidget {
+class CartScreen extends StatelessWidget {
   static const routeName = '/cart';
-
-  @override
-  _CartScreenState createState() => _CartScreenState();
-}
-
-class _CartScreenState extends State<CartScreen> {
-  var _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -55,38 +48,9 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ),
                   Consumer<Cart>(
-                    builder: (ctx, cart, child) => TextButton(
-                      onPressed: cart.items.isEmpty
-                          ? null
-                          : () async {
-                              setState(() => _isLoading = true);
-                              try {
-                                await Provider.of<Orders>(context,
-                                        listen: false)
-                                    .addOrder(
-                                  cart.items.values.toList(),
-                                  cart.totalPrice,
-                                );
-                                cart.clear();
-                                Navigator.of(context).pushNamedAndRemoveUntil(
-                                    OrdersScreen.routeName, (route) => false);
-                              } catch (_) {
-                                scaffoldMessenger.showSnackBar(SnackBar(
-                                  content: const Text(
-                                    'Error adding order!',
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ));
-                              } finally {
-                                setState(() => _isLoading = false);
-                              }
-                            },
-                      child: _isLoading
-                          ? CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).primaryColor),
-                            )
-                          : const Text('ORDER NOW'),
+                    builder: (ctx, cart, child) => OrderButton(
+                      scaffoldMessenger: scaffoldMessenger,
+                      cart: cart,
                     ),
                   )
                 ],
@@ -110,6 +74,60 @@ class _CartScreenState extends State<CartScreen> {
           )
         ],
       ),
+    );
+  }
+}
+
+class OrderButton extends StatefulWidget {
+  final Cart cart;
+
+  const OrderButton({
+    Key key,
+    @required this.scaffoldMessenger,
+    @required this.cart,
+  }) : super(key: key);
+
+  final ScaffoldMessengerState scaffoldMessenger;
+
+  @override
+  _OrderButtonState createState() => _OrderButtonState();
+}
+
+class _OrderButtonState extends State<OrderButton> {
+  var _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: widget.cart.items.isEmpty || _isLoading
+          ? null
+          : () async {
+              setState(() => _isLoading = true);
+              try {
+                await Provider.of<Orders>(context, listen: false).addOrder(
+                  widget.cart.items.values.toList(),
+                  widget.cart.totalPrice,
+                );
+                widget.cart.clear();
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                    OrdersScreen.routeName, (route) => false);
+              } catch (_) {
+                widget.scaffoldMessenger.showSnackBar(SnackBar(
+                  content: const Text(
+                    'Error adding order!',
+                    textAlign: TextAlign.center,
+                  ),
+                ));
+              } finally {
+                setState(() => _isLoading = false);
+              }
+            },
+      child: _isLoading
+          ? CircularProgressIndicator(
+              // valueColor:
+              //     AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+              )
+          : const Text('ORDER NOW'),
     );
   }
 }

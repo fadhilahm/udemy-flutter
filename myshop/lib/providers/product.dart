@@ -22,22 +22,30 @@ class Product with ChangeNotifier {
     this.isFavorite = false,
   });
 
-  Future<void> toggleIsFavorite() async {
-    isFavorite = !isFavorite;
+  void _setFav(bool newValue) {
+    isFavorite = newValue;
     notifyListeners();
+  }
+
+  Future<void> toggleIsFavorite() async {
+    final oldValue = isFavorite;
+    _setFav(!isFavorite);
 
     final url = Uri.https(
       'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
       '/products/$id.json',
     );
-    await http
-        .patch(url, body: json.encode({'isFavorite': isFavorite}))
-        .then((response) {
-      if (response.statusCode >= 400) {
-        isFavorite = !isFavorite;
-        notifyListeners();
-        throw HttpException('Failed to delete isFavorite!');
-      }
-    });
+    try {
+      await http
+          .patch(url, body: json.encode({'isFavorite': isFavorite}))
+          .then((response) {
+        if (response.statusCode >= 400) {
+          _setFav(oldValue);
+          throw HttpException('Failed to delete isFavorite!');
+        }
+      });
+    } catch (err) {
+      _setFav(oldValue);
+    }
   }
 }
