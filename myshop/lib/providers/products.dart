@@ -11,6 +11,10 @@ import '../models/http_exception.dart';
 
 class Products with ChangeNotifier {
   List<Product> _items = dummyProducts;
+  final String authToken;
+  final String userId;
+
+  Products(this.authToken, this.userId, this._items);
 
   List<Product> get items => [..._items];
 
@@ -19,15 +23,30 @@ class Products with ChangeNotifier {
 
   Product findById(String id) => _items.firstWhere((item) => item.id == id);
 
-  Future<void> fetchAndSetProducts() async {
-    final url = Uri.https(
+  Future<void> fetchAndSetProducts([bool isFilteredById = false]) async {
+    var url = Uri.https(
       'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
       '/products.json',
+      {
+        'auth': authToken,
+        if (isFilteredById) ...{
+          'orderBy': '\"creatorId\"',
+          'equalTo': '\"$userId\"',
+        }
+      },
     );
     try {
       final response = await http.get(url);
-      final extractedData = json.decode(response.body) as Map<String, dynamic>;
+      final Map<String, dynamic> extractedData = json.decode(response.body);
       if (extractedData == null) return;
+
+      url = Uri.https(
+        'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
+        '/userFavorites/$userId.json',
+        {'auth': authToken},
+      );
+      var favoritesResponse = await http.get(url);
+      var favoritesData = json.decode(favoritesResponse.body);
 
       final List<Product> loadedProducts = [];
       extractedData.forEach(
@@ -38,7 +57,9 @@ class Products with ChangeNotifier {
             description: productData['description'],
             price: productData['price'],
             imageUrl: productData['imageUrl'],
-            isFavorite: productData['isFavorite'],
+            isFavorite: favoritesData == null
+                ? false
+                : favoritesData[productId] ?? false,
           ),
         ),
       );
@@ -55,6 +76,7 @@ class Products with ChangeNotifier {
       final url = Uri.https(
         'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
         '/products.json',
+        {'auth': authToken},
       );
       final response = await http.post(
         url,
@@ -63,7 +85,7 @@ class Products with ChangeNotifier {
           'price': newProductForm.price,
           'description': newProductForm.description,
           'imageUrl': newProductForm.imageUrl,
-          'isFavorite': newProductForm.isFavorite,
+          'creatorId': userId,
         }),
       );
       _items.add(
@@ -88,6 +110,7 @@ class Products with ChangeNotifier {
     final url = Uri.https(
       'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
       '/products/$id.json',
+      {'auth': authToken},
     );
     try {
       await http.patch(url,
@@ -123,6 +146,7 @@ class Products with ChangeNotifier {
     final url = Uri.https(
       'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
       '/products/$id.json',
+      {'auth': authToken},
     );
     final response = await http.delete(url);
 

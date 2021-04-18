@@ -9,13 +9,18 @@ import '../models/http_exception.dart';
 
 class Orders with ChangeNotifier {
   List<OrderItem> _orders = [];
+  final String authToken;
+  final String userId;
+
+  Orders(this.authToken, this.userId, this._orders);
 
   List<OrderItem> get orders => [..._orders];
 
   Future<void> fetchAndSetOrders() async {
     final url = Uri.https(
       'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
-      '/orders.json',
+      '/orders/$userId.json',
+      {'auth': authToken},
     );
     try {
       final response = await http.get(url);
@@ -54,7 +59,8 @@ class Orders with ChangeNotifier {
   Future<void> addOrder(List<CartItem> cartProducts, double total) async {
     final url = Uri.https(
       'flutter-myshop-7d39c-default-rtdb.firebaseio.com',
-      '/orders.json',
+      '/orders/$userId.json',
+      {'auth': authToken},
     );
     final currentTime = DateTime.now();
     final mappedCartProducts = cartProducts
