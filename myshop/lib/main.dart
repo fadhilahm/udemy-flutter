@@ -15,61 +15,70 @@ import './providers/cart.dart';
 import './providers/orders.dart';
 import './providers/auth.dart';
 
+import './helpers/custom_route.dart';
+
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (ctx) => Auth(),
+      providers: [
+        ChangeNotifierProvider(
+          create: (ctx) => Auth(),
+        ),
+        ChangeNotifierProxyProvider<Auth, Products>(
+          create: null,
+          update: (ctx, auth, previousProducts) => Products(
+            auth.token,
+            auth.userId,
+            previousProducts == null ? [] : previousProducts.items,
           ),
-          ChangeNotifierProxyProvider<Auth, Products>(
-            create: null,
-            update: (ctx, auth, previousProducts) => Products(
-              auth.token,
-              auth.userId,
-              previousProducts == null ? [] : previousProducts.items,
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => Cart(),
+        ),
+        ChangeNotifierProxyProvider<Auth, Orders>(
+          create: null,
+          update: (ctx, auth, previousOrders) => Orders(
+            auth.token,
+            auth.userId,
+            previousOrders == null ? [] : previousOrders.orders,
+          ),
+        )
+      ],
+      child: Consumer<Auth>(
+        builder: (context, auth, _) => MaterialApp(
+          theme: ThemeData(
+            primarySwatch: Colors.purple,
+            accentColor: Colors.deepOrange,
+            fontFamily: 'Lato',
+            pageTransitionsTheme: PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: CustomRouteTransition(),
+                TargetPlatform.iOS: CustomRouteTransition(),
+              },
             ),
           ),
-          ChangeNotifierProvider(
-            create: (ctx) => Cart(),
-          ),
-          ChangeNotifierProxyProvider<Auth, Orders>(
-            create: null,
-            update: (ctx, auth, previousOrders) => Orders(
-              auth.token,
-              auth.userId,
-              previousOrders == null ? [] : previousOrders.orders,
-            ),
-          )
-        ],
-        child: Consumer<Auth>(
-          builder: (context, auth, _) => MaterialApp(
-            theme: ThemeData(
-              primarySwatch: Colors.purple,
-              accentColor: Colors.deepOrange,
-              fontFamily: 'Lato',
-            ),
-            home: auth.isAuth
-                ? ProductsOverviewScreen()
-                : FutureBuilder(
-                    future: auth.tryLogin(),
-                    builder: (context, authResultSnapshot) =>
-                        authResultSnapshot.connectionState ==
-                                ConnectionState.waiting
-                            ? SplashScreen()
-                            : AuthScreen(),
-                  ),
-            routes: {
-              ProductDetailScreen.routeName: (ctx) => ProductDetailScreen(),
-              CartScreen.routeName: (ctx) => CartScreen(),
-              OrdersScreen.routeName: (ctx) => OrdersScreen(),
-              UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
-              EditProductScreen.routeName: (ctx) => EditProductScreen(),
-            },
-          ),
-        ));
+          home: auth.isAuth
+              ? ProductsOverviewScreen()
+              : FutureBuilder(
+                  future: auth.tryLogin(),
+                  builder: (context, authResultSnapshot) =>
+                      authResultSnapshot.connectionState ==
+                              ConnectionState.waiting
+                          ? SplashScreen()
+                          : AuthScreen(),
+                ),
+          routes: {
+            ProductDetailScreen.routeName: (ctx) => ProductDetailScreen(),
+            CartScreen.routeName: (ctx) => CartScreen(),
+            OrdersScreen.routeName: (ctx) => OrdersScreen(),
+            UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
+            EditProductScreen.routeName: (ctx) => EditProductScreen(),
+          },
+        ),
+      ),
+    );
   }
 }

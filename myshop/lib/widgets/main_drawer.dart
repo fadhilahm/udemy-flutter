@@ -6,6 +6,8 @@ import '../screens/user_products_screen.dart';
 
 import '../providers/auth.dart';
 
+// import '../helpers/custom_route.dart';
+
 class MainDrawer extends StatelessWidget {
   List<Widget> buildDrawerItem({
     @required BuildContext context,
@@ -19,6 +21,11 @@ class MainDrawer extends StatelessWidget {
         leading: Icon(icon),
         title: Text(title),
         onTap: () => Navigator.of(context).pushReplacementNamed(routeName),
+        // onTap: () => Navigator.of(context).pushReplacement(
+        //   CustomRoute(
+        //     builder: (ctx) => OrdersScreen(),
+        //   ),
+        // ),
       ),
     ];
   }
